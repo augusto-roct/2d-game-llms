@@ -54,3 +54,7 @@ func _process(delta):
 
 func _on_wait_animation_timer_timeout():
 	is_animating = false
+
+
+func start(pos):
+	position = pos
