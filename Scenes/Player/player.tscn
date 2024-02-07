@@ -375,7 +375,7 @@ animations = [{
 radius = 9.0
 
 [node name="Player" type="Area2D"]
-position = Vector2(37, 671)
+position = Vector2(30, 692)
 scale = Vector2(2.5, 2.5)
 script = ExtResource("1_g0jiq")
 speed = 70
@@ -384,12 +384,28 @@ metadata/_edit_group_ = true
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_y8qsd")
 animation = &"up"
-frame_progress = 0.820003
+frame = 2
+frame_progress = 0.890734
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 1)
 shape = SubResource("CapsuleShape2D_82qaf")
 
 [node name="WaitAnimationTimer" type="Timer" parent="."]
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="NameLabel" type="Label" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -21.0
+offset_right = 21.0
+offset_bottom = 18.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 13
+text = "Will"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [connection signal="timeout" from="WaitAnimationTimer" to="." method="_on_wait_animation_timer_timeout"]
