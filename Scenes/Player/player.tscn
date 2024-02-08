@@ -408,4 +408,7 @@ text = "Will"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="HTTPRequest" type="HTTPRequest" parent="."]
+
 [connection signal="timeout" from="WaitAnimationTimer" to="." method="_on_wait_animation_timer_timeout"]
+[connection signal="request_completed" from="HTTPRequest" to="." method="_on_http_request_completed"]
