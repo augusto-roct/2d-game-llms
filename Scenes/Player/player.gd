@@ -11,6 +11,7 @@ var name_player
 var system_prompt
 var center_player_size
 var actually_position
+var list_players
 
 func _ready():
 	screen_size = get_viewport_rect().size
@@ -83,7 +84,6 @@ func _process(delta):
 	var payload = JSON.stringify(data)
 	
 	#$HTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
-	
 
 func _on_wait_animation_timer_timeout():
 	is_animating = false
@@ -95,13 +95,18 @@ func _on_http_request_completed(result, response_code, headers, body):
 	$WriteHUD/WriteRichTextLabel.text = messages[-1]["content"]
 	
 	$WriteHUD/WriteRichTextLabel.position = actually_position
+	
 	$WriteHUD/WriteRichTextLabel.position.y -= 100
-	$WriteHUD/WriteRichTextLabel.position.x += 50
 	
-	var limit_screen_size_x = $WriteHUD/WriteRichTextLabel.position.x + $WriteHUD/WriteRichTextLabel.size.x
+	if list_players[0].position.x >= position.x:
+		$WriteHUD/WriteRichTextLabel.position.x += 50
+	else:
+		$WriteHUD/WriteRichTextLabel.position.x -= $WriteHUD/WriteRichTextLabel.size.x - 10
 	
-	if limit_screen_size_x >= screen_size.x: 
-		$WriteHUD/WriteRichTextLabel.position.x -= $WriteHUD/WriteRichTextLabel.size.x + 40
+	var limit_screen_size_y = $WriteHUD/WriteRichTextLabel.position.y + $WriteHUD/WriteRichTextLabel.size.y
+	
+	if $WriteHUD/WriteRichTextLabel.position.y >= screen_size.y: 
+		$WriteHUD/WriteRichTextLabel.position.y -= $WriteHUD/WriteRichTextLabel.size.y + 100
 	if $WriteHUD/WriteRichTextLabel.position.y <= 0: 
 		$WriteHUD/WriteRichTextLabel.position.y += $WriteHUD/WriteRichTextLabel.size.y + 100
 

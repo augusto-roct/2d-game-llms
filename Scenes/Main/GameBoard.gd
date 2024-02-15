@@ -10,4 +10,16 @@ func _ready():
 
 
 func _process(delta):
-	pass
+	$Joseph.list_players = [
+		{
+			"name": "Will",
+			"position": $Will.position
+		}
+	]
+	
+	$Will.list_players = [
+		{
+			"name": "Joseph",
+			"position": $Joseph.position
+		}
+	]
