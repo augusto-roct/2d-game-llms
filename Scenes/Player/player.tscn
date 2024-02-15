@@ -425,7 +425,8 @@ fit_content = true
 scroll_active = false
 
 [node name="WaitWriteTimer" type="Timer" parent="WriteHUD"]
-wait_time = 5.0
+wait_time = 10.0
+one_shot = true
 
 [connection signal="timeout" from="WaitAnimationTimer" to="." method="_on_wait_animation_timer_timeout"]
 [connection signal="request_completed" from="HTTPRequest" to="." method="_on_http_request_completed"]

@@ -17,6 +17,7 @@ var is_talking = false
 var player_listener
 var text_talk = "Oi"
 var messages
+var is_stop = false
 
 func _ready():
 	screen_size = get_viewport_rect().size
@@ -70,19 +71,16 @@ func _process(delta):
 		
 	$WriteHUD/WriteRichTextLabel.position = actually_position
 	
-	$WriteHUD/WriteRichTextLabel.position.y -= 50
-	
 	if list_players[0].position.x >= position.x:
 		$WriteHUD/WriteRichTextLabel.position.x += 50
 	else:
 		$WriteHUD/WriteRichTextLabel.position.x -= $WriteHUD/WriteRichTextLabel.size.x - 10
 	
-	var limit_screen_size_y = $WriteHUD/WriteRichTextLabel.position.y + $WriteHUD/WriteRichTextLabel.size.y
+	$WriteHUD/WriteRichTextLabel.position.y -= 20
 	
-	if $WriteHUD/WriteRichTextLabel.position.y >= screen_size.y: 
-		$WriteHUD/WriteRichTextLabel.position.y -= $WriteHUD/WriteRichTextLabel.size.y + 50
-	if $WriteHUD/WriteRichTextLabel.position.y <= 0: 
-		$WriteHUD/WriteRichTextLabel.position.y += $WriteHUD/WriteRichTextLabel.size.y - 100
+	$WriteHUD/WriteRichTextLabel.position = $WriteHUD/WriteRichTextLabel.position.clamp(
+		Vector2.ZERO, (screen_size - $WriteHUD/WriteRichTextLabel.size)
+	)
 
 
 func talk(text, listener):
@@ -97,8 +95,8 @@ func talk(text, listener):
 			"parameters": {},
 			"generation_config": {
 				"candidate_count": 1,
-				"max_output_tokens": 128,
-				"temperature": 0.3,
+				"max_output_tokens": 256,
+				"temperature": 0.7,
 				"top_p": 0.1,
 				"top_k": 1
 			},
@@ -126,10 +124,21 @@ func _on_http_request_completed(result, response_code, headers, body):
 	messages = JSON.parse_string(body.get_string_from_utf8())
 	
 	text_talk = messages[-1]["content"]
+	
+	if text_talk.contains("finish_conversation = true"):
+		is_stop = true
+	
+	text_talk = text_talk.replace("finish_conversation = false", "")
+	text_talk = text_talk.replace("finish_conversation = true", "")
+	if len(text_talk) < 53:
+		$WriteHUD/WriteRichTextLabel.size.x = len(text_talk) * 8
+	else:
+		$WriteHUD/WriteRichTextLabel.size.x = 438
+	
 	$WriteHUD/WriteRichTextLabel.text = text_talk
 	
-	$WriteHUD/WaitWriteTimer.start()
 	$WriteHUD.show()
+	$WriteHUD/WaitWriteTimer.start()
 
 
 func start(pos, nick, prompt, is_listen):
@@ -148,9 +157,9 @@ func start(pos, nick, prompt, is_listen):
 	is_player_listen = is_listen
 
 
-func _on_wait_write_timer_timeout():	
-	$WriteHUD/WriteRichTextLabel.text = ""
+func _on_wait_write_timer_timeout():
 	$WriteHUD.hide()
+	$WriteHUD/WriteRichTextLabel.text = ""
 	
 	is_talking = false
 	is_player_listen = true
