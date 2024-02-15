@@ -9,10 +9,14 @@ var headers = ["Content-Type: application/json"]
 var url = "http://127.0.0.1:8000/chat/completion"
 var name_player
 var system_prompt
+var center_player_size
+var actually_position
 
 func _ready():
 	screen_size = get_viewport_rect().size
 	player_size = $CollisionShape2D.shape.get_rect().size
+	
+	center_player_size = Vector2((player_size.x/2 * 2.5), (player_size.y/2 * 2.5))
 
 
 func _process(delta):
@@ -42,10 +46,12 @@ func _process(delta):
 		$AnimatedSprite2D.animation = "idle"
 	
 	position += velocity * delta
-	position = position.clamp(player_size/2 * 2.5, (screen_size - (player_size/2 * 2.5)))
+	position = position.clamp(center_player_size, (screen_size - center_player_size))
 	
-	$HUD/NameLabel.position.y = position.y - (player_size.y/2 * 2.5) - 15
-	$HUD/NameLabel.position.x = position.x - (player_size.x/2 * 2.5)
+	actually_position = position - center_player_size
+	
+	$NamePlayerHUD/NameLabel.position = actually_position
+	$NamePlayerHUD/NameLabel.position.y -= 15
 	
 	if velocity.x < 0:
 		$AnimatedSprite2D.animation = "left"
@@ -76,16 +82,32 @@ func _process(delta):
 	}
 	var payload = JSON.stringify(data)
 	
-	$HTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
-
+	#$HTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
+	
 
 func _on_wait_animation_timer_timeout():
 	is_animating = false
 
 
 func _on_http_request_completed(result, response_code, headers, body):
-	var json = JSON.parse_string(body.get_string_from_utf8())
-	print(json)
+	var messages = JSON.parse_string(body.get_string_from_utf8())
+	
+	$WriteHUD/WriteRichTextLabel.text = messages[-1]["content"]
+	
+	$WriteHUD/WriteRichTextLabel.position = actually_position
+	$WriteHUD/WriteRichTextLabel.position.y -= 100
+	$WriteHUD/WriteRichTextLabel.position.x += 50
+	
+	var limit_screen_size_x = $WriteHUD/WriteRichTextLabel.position.x + $WriteHUD/WriteRichTextLabel.size.x
+	
+	if limit_screen_size_x >= screen_size.x: 
+		$WriteHUD/WriteRichTextLabel.position.x -= $WriteHUD/WriteRichTextLabel.size.x + 40
+	if $WriteHUD/WriteRichTextLabel.position.y <= 0: 
+		$WriteHUD/WriteRichTextLabel.position.y += $WriteHUD/WriteRichTextLabel.size.y + 100
+
+	$WriteHUD.show()
+	
+	$WriteHUD/WaitWriteTimer.start()
 
 
 func start(pos, nick, prompt):
@@ -93,11 +115,14 @@ func start(pos, nick, prompt):
 	
 	name_player = nick
 	system_prompt = prompt.replace("{name_player}", name_player)
-	$HUD/NameLabel.text = name_player
+	$NamePlayerHUD/NameLabel.text = name_player
 	
-	$HUD/NameLabel.position = pos
-	$HUD/NameLabel.position.y = pos.y - (player_size.y * 2.5)
-	$HUD/NameLabel.position.x = pos.x - (player_size.x * 2.5)
-	$HUD/NameLabel.show()
+	$NamePlayerHUD/NameLabel.position = pos - center_player_size
+	$NamePlayerHUD/NameLabel.show()
 	
 	system_prompt = prompt
+
+
+func _on_wait_write_timer_timeout():
+	$WriteHUD/WriteRichTextLabel.text = ""
+	$WriteHUD.hide()

@@ -5,7 +5,7 @@ var prompt_farmer = FileAccess.open("./Scenes/Main/prompts/farmer.txt", FileAcce
 
 func _ready():
 	$Joseph.start(Vector2(1200, 80), "Joseph", prompt_farmer)
-	$Will.start(Vector2(80, 640), "Will")
+	$Will.start(Vector2(80, 640), "Will", "")
 	
 
 

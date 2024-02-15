@@ -379,7 +379,6 @@ position = Vector2(30, 692)
 scale = Vector2(2.5, 2.5)
 script = ExtResource("1_g0jiq")
 speed = 70
-metadata/_edit_group_ = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_y8qsd")
@@ -393,9 +392,9 @@ shape = SubResource("CapsuleShape2D_82qaf")
 
 [node name="WaitAnimationTimer" type="Timer" parent="."]
 
-[node name="HUD" type="CanvasLayer" parent="."]
+[node name="NamePlayerHUD" type="CanvasLayer" parent="."]
 
-[node name="NameLabel" type="Label" parent="HUD"]
+[node name="NameLabel" type="Label" parent="NamePlayerHUD"]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -410,5 +409,24 @@ vertical_alignment = 1
 
 [node name="HTTPRequest" type="HTTPRequest" parent="."]
 
+[node name="WriteHUD" type="CanvasLayer" parent="."]
+
+[node name="WriteRichTextLabel" type="RichTextLabel" parent="WriteHUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -1228.0
+offset_top = 578.0
+offset_right = -1028.0
+offset_bottom = 670.0
+grow_horizontal = 0
+text = "Sou Gemini, um modelo de linguagem de IA multimodal desenvolvido pelo Google."
+fit_content = true
+scroll_active = false
+
+[node name="WaitWriteTimer" type="Timer" parent="WriteHUD"]
+wait_time = 5.0
+
 [connection signal="timeout" from="WaitAnimationTimer" to="." method="_on_wait_animation_timer_timeout"]
 [connection signal="request_completed" from="HTTPRequest" to="." method="_on_http_request_completed"]
+[connection signal="timeout" from="WriteHUD/WaitWriteTimer" to="." method="_on_wait_write_timer_timeout"]
