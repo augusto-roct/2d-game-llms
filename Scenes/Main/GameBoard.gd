@@ -10,6 +10,10 @@ func _ready():
 
 
 func _process(delta):
+	if $Joseph.is_stop:
+		print($Joseph.messages)
+		get_tree().paused = true
+		
 	$Joseph.list_players = [
 		{
 			"name": "Will",

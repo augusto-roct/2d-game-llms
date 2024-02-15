@@ -17,6 +17,7 @@ var is_talking = false
 var player_listener
 var text_talk = "Oi"
 var messages
+var is_stop = false
 
 func _ready():
 	screen_size = get_viewport_rect().size
@@ -126,6 +127,10 @@ func _on_http_request_completed(result, response_code, headers, body):
 	messages = JSON.parse_string(body.get_string_from_utf8())
 	
 	text_talk = messages[-1]["content"]
+	
+	if text_talk.contains("finish_conversation = true"):
+		is_stop = true
+		
 	$WriteHUD/WriteRichTextLabel.text = text_talk
 	
 	$WriteHUD/WaitWriteTimer.start()
