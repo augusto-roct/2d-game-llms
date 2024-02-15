@@ -16,6 +16,7 @@ var is_player_listen
 var is_talking = false
 var player_listener
 var text_talk = "Oi"
+var messages
 
 func _ready():
 	screen_size = get_viewport_rect().size
@@ -90,22 +91,23 @@ func talk(text, listener):
 		is_talking = true
 		
 		var data = {
-		  "text": text,
-		  "system": system_prompt,
-		  "parameters": {},
-		  "generation_config": {
-			"candidate_count": 1,
-			"max_output_tokens": 128,
-			"temperature": 0.3,
-			"top_p": 0.1,
-			"top_k": 1
-		  },
-		  "safety_settings": {
-			"HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
-			"HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
-			"HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
-			"HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE"
-		  }
+			"text": text,
+			"system": system_prompt,
+			"messages": messages,
+			"parameters": {},
+			"generation_config": {
+				"candidate_count": 1,
+				"max_output_tokens": 128,
+				"temperature": 0.3,
+				"top_p": 0.1,
+				"top_k": 1
+			},
+			"safety_settings": {
+				"HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
+				"HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
+				"HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
+				"HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE"
+			}
 		}
 		var payload = JSON.stringify(data)
 		
@@ -121,7 +123,7 @@ func _on_http_request_completed(result, response_code, headers, body):
 		is_talking = false
 		return
 	
-	var messages = JSON.parse_string(body.get_string_from_utf8())
+	messages = JSON.parse_string(body.get_string_from_utf8())
 	
 	text_talk = messages[-1]["content"]
 	$WriteHUD/WriteRichTextLabel.text = text_talk
