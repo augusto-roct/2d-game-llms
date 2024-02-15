@@ -12,6 +12,10 @@ var system_prompt
 var center_player_size
 var actually_position
 var list_players
+var is_player_listen
+var is_talking = false
+var player_listener
+var text_talk = "Oi"
 
 func _ready():
 	screen_size = get_viewport_rect().size
@@ -62,41 +66,10 @@ func _process(delta):
 		$AnimatedSprite2D.animation = "up"
 	elif velocity.y > 0:
 		$AnimatedSprite2D.animation = "down"
-	
-	var data = {
-	  "text": "Oi",
-	  "system": system_prompt,
-	  "parameters": {},
-	  "generation_config": {
-		"candidate_count": 1,
-		"max_output_tokens": 512,
-		"temperature": 0.3,
-		"top_p": 0.1,
-		"top_k": 1
-	  },
-	  "safety_settings": {
-		"HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
-		"HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
-		"HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
-		"HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE"
-	  }
-	}
-	var payload = JSON.stringify(data)
-	
-	#$HTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
-
-func _on_wait_animation_timer_timeout():
-	is_animating = false
-
-
-func _on_http_request_completed(result, response_code, headers, body):
-	var messages = JSON.parse_string(body.get_string_from_utf8())
-	
-	$WriteHUD/WriteRichTextLabel.text = messages[-1]["content"]
-	
+		
 	$WriteHUD/WriteRichTextLabel.position = actually_position
 	
-	$WriteHUD/WriteRichTextLabel.position.y -= 100
+	$WriteHUD/WriteRichTextLabel.position.y -= 50
 	
 	if list_players[0].position.x >= position.x:
 		$WriteHUD/WriteRichTextLabel.position.x += 50
@@ -106,16 +79,58 @@ func _on_http_request_completed(result, response_code, headers, body):
 	var limit_screen_size_y = $WriteHUD/WriteRichTextLabel.position.y + $WriteHUD/WriteRichTextLabel.size.y
 	
 	if $WriteHUD/WriteRichTextLabel.position.y >= screen_size.y: 
-		$WriteHUD/WriteRichTextLabel.position.y -= $WriteHUD/WriteRichTextLabel.size.y + 100
+		$WriteHUD/WriteRichTextLabel.position.y -= $WriteHUD/WriteRichTextLabel.size.y + 50
 	if $WriteHUD/WriteRichTextLabel.position.y <= 0: 
-		$WriteHUD/WriteRichTextLabel.position.y += $WriteHUD/WriteRichTextLabel.size.y + 100
+		$WriteHUD/WriteRichTextLabel.position.y += $WriteHUD/WriteRichTextLabel.size.y - 100
 
-	$WriteHUD.show()
+
+func talk(text, listener):
+	if not is_talking:
+		player_listener = listener
+		is_talking = true
+		
+		var data = {
+		  "text": text,
+		  "system": system_prompt,
+		  "parameters": {},
+		  "generation_config": {
+			"candidate_count": 1,
+			"max_output_tokens": 128,
+			"temperature": 0.3,
+			"top_p": 0.1,
+			"top_k": 1
+		  },
+		  "safety_settings": {
+			"HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
+			"HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
+			"HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
+			"HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE"
+		  }
+		}
+		var payload = JSON.stringify(data)
+		
+		$HTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
+
+
+func _on_wait_animation_timer_timeout():
+	is_animating = false
+
+
+func _on_http_request_completed(result, response_code, headers, body):
+	if response_code != 200:
+		is_talking = false
+		return
+	
+	var messages = JSON.parse_string(body.get_string_from_utf8())
+	
+	text_talk = messages[-1]["content"]
+	$WriteHUD/WriteRichTextLabel.text = text_talk
 	
 	$WriteHUD/WaitWriteTimer.start()
+	$WriteHUD.show()
 
 
-func start(pos, nick, prompt):
+func start(pos, nick, prompt, is_listen):
 	position = pos
 	
 	name_player = nick
@@ -125,9 +140,17 @@ func start(pos, nick, prompt):
 	$NamePlayerHUD/NameLabel.position = pos - center_player_size
 	$NamePlayerHUD/NameLabel.show()
 	
-	system_prompt = prompt
-
-
-func _on_wait_write_timer_timeout():
 	$WriteHUD/WriteRichTextLabel.text = ""
 	$WriteHUD.hide()
+	
+	is_player_listen = is_listen
+
+
+func _on_wait_write_timer_timeout():	
+	$WriteHUD/WriteRichTextLabel.text = ""
+	$WriteHUD.hide()
+	
+	is_talking = false
+	is_player_listen = true
+	
+	player_listener.is_player_listen = false
