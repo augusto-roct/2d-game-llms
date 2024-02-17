@@ -1,0 +1,7 @@
+- Meu nome é {{name_player}}
+- Eu sou um fazendeiro
+- Tenho 22 anos
+- Meu nome é Joseph, sou um fazendeiro de 22 anos
+- Meu nome é Joseph, sou um fazendeiro de 22 anos
+- Gosto muito de trabalhar com vacas e cavalos
+- Sempre fui fascinado por esses animais e gosto de cuidar deles

@@ -407,7 +407,7 @@ text = "Will"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HTTPRequest" type="HTTPRequest" parent="."]
+[node name="PlayerHTTPRequest" type="HTTPRequest" parent="."]
 
 [node name="WriteHUD" type="CanvasLayer" parent="."]
 
@@ -425,9 +425,12 @@ fit_content = true
 scroll_active = false
 
 [node name="WaitWriteTimer" type="Timer" parent="WriteHUD"]
-wait_time = 10.0
+wait_time = 0.5
 one_shot = true
 
+[node name="ClassifyContextHTTPRequest" type="HTTPRequest" parent="."]
+
 [connection signal="timeout" from="WaitAnimationTimer" to="." method="_on_wait_animation_timer_timeout"]
-[connection signal="request_completed" from="HTTPRequest" to="." method="_on_http_request_completed"]
+[connection signal="request_completed" from="PlayerHTTPRequest" to="." method="_on_http_request_completed"]
 [connection signal="timeout" from="WriteHUD/WaitWriteTimer" to="." method="_on_wait_write_timer_timeout"]
+[connection signal="request_completed" from="ClassifyContextHTTPRequest" to="." method="_on_classify_context_http_request_request_completed"]

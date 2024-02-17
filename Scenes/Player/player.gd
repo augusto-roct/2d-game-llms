@@ -8,7 +8,6 @@ var player_size
 var headers = ["Content-Type: application/json"]
 var url = "http://127.0.0.1:8000/chat/completion"
 var name_player
-var system_prompt
 var center_player_size
 var actually_position
 var list_players
@@ -85,6 +84,28 @@ func _process(delta):
 
 func talk(text, listener):
 	if not is_talking:
+		var system_prompt = "Você vai realizar perguntas para ajudar a pessoa a adquirir conhecimento. Além disso faça perguntas sobre a personalidade dela, familia, o que ela faz, planos futuros e sobre o sentimentos dela sobre alguma coisa ou assunto. Caso a pessoa faça uma pergunta responda ela e logo em seguida faça uma nova pergunta"
+		var parameters = {}
+		
+		if name_player == "Joseph":
+			system_prompt = FileAccess.open("./Scenes/Main/prompts/farmer.txt", FileAccess.READ).get_as_text()
+			var farmer_i_am = FileAccess.open("./Scenes/Main/prompts/i_am.txt", FileAccess.READ).get_as_text()
+			var farmer_know = FileAccess.open("./Scenes/Main/prompts/i_know.txt", FileAccess.READ).get_as_text()
+			var farmer_make = FileAccess.open("./Scenes/Main/prompts/i_make.txt", FileAccess.READ).get_as_text()
+			var farmer_plans = FileAccess.open("./Scenes/Main/prompts/my_plans.txt", FileAccess.READ).get_as_text()
+			var farmer_sentimentals = FileAccess.open("./Scenes/Main/prompts/my_sentimentals.txt", FileAccess.READ).get_as_text()
+			var farmer_want = FileAccess.open("./Scenes/Main/prompts/i_want.txt", FileAccess.READ).get_as_text()
+			
+			parameters = {
+				"i_am": farmer_i_am,
+				"i_know": farmer_know,
+				"i_make": farmer_make,
+				"my_plans": farmer_plans,
+				"my_sentimentals": farmer_sentimentals,
+				"i_want": farmer_want,
+				"name_player": name_player
+			}
+		
 		player_listener = listener
 		is_talking = true
 		
@@ -92,12 +113,12 @@ func talk(text, listener):
 			"text": text,
 			"system": system_prompt,
 			"messages": messages,
-			"parameters": {},
+			"parameters": parameters,
 			"generation_config": {
 				"candidate_count": 1,
-				"max_output_tokens": 256,
-				"temperature": 0.7,
-				"top_p": 0.1,
+				"max_output_tokens": 1028,
+				"temperature": 1,
+				"top_p": 0.9,
 				"top_k": 1
 			},
 			"safety_settings": {
@@ -109,14 +130,14 @@ func talk(text, listener):
 		}
 		var payload = JSON.stringify(data)
 		
-		$HTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
+		$PlayerHTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
 
 
 func _on_wait_animation_timer_timeout():
 	is_animating = false
 
 
-func _on_http_request_completed(result, response_code, headers, body):
+func _on_http_request_completed(result, response_code, response_headers, body):
 	if response_code != 200:
 		is_talking = false
 		return
@@ -125,11 +146,42 @@ func _on_http_request_completed(result, response_code, headers, body):
 	
 	text_talk = messages[-1]["content"]
 	
+	print(name_player, ": ", text_talk, "\n\n\n")
+	
+	if name_player == "Joseph":
+		var classify_prompt = FileAccess.open("./Scenes/Main/prompts/classify_context.txt", FileAccess.READ).get_as_text()
+		
+		var data = {
+			"text": text_talk,
+			"system": classify_prompt,
+			"generation_config": {
+				"candidate_count": 1,
+				"max_output_tokens": 1028,
+				"temperature": 1,
+				"top_p": 0.9,
+				"top_k": 1
+			},
+			"safety_settings": {
+				"HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
+				"HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
+				"HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
+				"HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE"
+			}
+		}
+		var payload = JSON.stringify(data)
+		
+		$ClassifyContextHTTPRequest.request(url, headers, HTTPClient.METHOD_POST, payload)
+		return
+	
+	active_HUD()
+
+func active_HUD():
 	if text_talk.contains("finish_conversation = true"):
 		is_stop = true
 	
 	text_talk = text_talk.replace("finish_conversation = false", "")
 	text_talk = text_talk.replace("finish_conversation = true", "")
+	
 	if len(text_talk) < 53:
 		$WriteHUD/WriteRichTextLabel.size.x = len(text_talk) * 8
 	else:
@@ -141,11 +193,32 @@ func _on_http_request_completed(result, response_code, headers, body):
 	$WriteHUD/WaitWriteTimer.start()
 
 
-func start(pos, nick, prompt, is_listen):
+func add_personallity(item_add: String, text_add: String):
+	var file = FileAccess.open("./Scenes/Main/prompts/" + item_add + ".txt", FileAccess.READ_WRITE)
+	
+	var list_items = file.get_as_text().split("- ")
+	if list_items[0] == "":
+		list_items.remove_at(0)
+	
+	list_items.append(text_add)
+	
+	var new_text_file = ""
+	for index in range(list_items.size()):
+		var text_item = list_items[index]
+		
+		new_text_file += "- " + text_item
+		
+		if not text_item[-1] == "\n":
+			new_text_file += "\n"
+		
+	file.store_string(new_text_file)
+	file.close()
+
+
+func start(pos, nick, is_listen):
 	position = pos
 	
 	name_player = nick
-	system_prompt = prompt.replace("{name_player}", name_player)
 	$NamePlayerHUD/NameLabel.text = name_player
 	
 	$NamePlayerHUD/NameLabel.position = pos - center_player_size
@@ -165,3 +238,38 @@ func _on_wait_write_timer_timeout():
 	is_player_listen = true
 	
 	player_listener.is_player_listen = false
+
+
+func _on_classify_context_http_request_request_completed(result, response_code, headers, body):
+	if response_code != 200:
+		is_talking = false
+		return
+	
+	messages = JSON.parse_string(body.get_string_from_utf8())
+	
+	var text_classify = JSON.parse_string(messages[-1]["content"])
+	
+	if text_classify:
+		if not isinstance(text_classify, array):
+			text_classify = [text_classify]
+		
+		for classify in text_classify:
+			if classify.keys()[0] == "add_i_am":
+				add_personallity("i_am", classify["add_i_am"])
+			
+			elif classify.keys()[0] == "add_i_know":
+				add_personallity("i_know", classify["add_i_know"])
+			
+			elif classify.keys()[0] == "add_my_sentimentals":
+				add_personallity("my_sentimentals", classify["add_my_sentimentals"])
+			
+			elif classify.keys()[0] == "add_i_want":
+				add_personallity("i_want", classify["add_i_want"])
+			
+			elif classify.keys()[0] == "add_i_make":
+				add_personallity("i_make", classify["add_i_make"])
+			
+			elif classify.keys()[0] == "add_my_plans":
+				add_personallity("my_plans", classify["add_my_plans"])
+		
+	active_HUD()
